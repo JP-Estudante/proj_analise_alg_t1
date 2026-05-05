@@ -71,7 +71,7 @@ def natural_merge_sort(values):
         merged_runs = []
 
         for i in range(0, len(runs), 2):
-            if i + 1 < len(runs):
+            if i + 1 < len(runs): # existe uma próxima run para formar par?
                 # Junta duas runs ordenadas em uma nova run ordenada.
                 merged_runs.append(_merge(runs[i], runs[i + 1], metrics))
             else:
