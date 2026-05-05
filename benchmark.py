@@ -117,47 +117,55 @@ def save_csv(rows, output_path):
         writer.writerows(rows)
 
 
-def try_generate_charts(rows, output_dir):
-    try:
-        # matplotlib e opcional: o projeto funciona mesmo sem gerar graficos.
-        import matplotlib.pyplot as plt
-    except ImportError:
-        print("matplotlib nao encontrado. O CSV foi gerado, mas os graficos nao.")
-        return
-
+def save_spreadsheet_chart_csvs(rows, output_dir):
+    # Gera arquivos CSV em formato largo, facilitando a importacao em planilhas.
     os.makedirs(output_dir, exist_ok=True)
     scenarios = sorted({row["cenario"] for row in rows})
     algorithms = sorted({row["algoritmo"] for row in rows})
 
     for scenario in scenarios:
-        # Cria um grafico separado para cada tipo de entrada.
-        plt.figure(figsize=(8, 5))
+        scenario_rows = [row for row in rows if row["cenario"] == scenario]
+        sizes = sorted({row["tamanho"] for row in scenario_rows})
+        output_path = os.path.join(output_dir, f"tempo_{scenario}.csv")
 
-        for algorithm in algorithms:
-            # Filtra as linhas do algoritmo e cenario atuais.
-            filtered_rows = [
-                row
-                for row in rows
-                if row["cenario"] == scenario and row["algoritmo"] == algorithm
-            ]
-            filtered_rows.sort(key=lambda row: row["tamanho"])
+        with open(output_path, "w", newline="", encoding="utf-8") as csv_file:
+            fieldnames = ["tamanho", *algorithms]
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            writer.writeheader()
 
-            sizes = [row["tamanho"] for row in filtered_rows]
-            times = [row["tempo_medio_seg"] for row in filtered_rows]
+            for size in sizes:
+                chart_row = {"tamanho": size}
+                for algorithm in algorithms:
+                    matching_rows = [
+                        row
+                        for row in scenario_rows
+                        if row["tamanho"] == size and row["algoritmo"] == algorithm
+                    ]
+                    chart_row[algorithm] = (
+                        matching_rows[0]["tempo_medio_seg"] if matching_rows else ""
+                    )
 
-            # Cada linha do grafico representa um algoritmo.
-            plt.plot(sizes, times, marker="o", label=algorithm)
+                writer.writerow(chart_row)
 
-        plt.title(f"Tempo medio - cenario {scenario}")
-        plt.xlabel("Tamanho do vetor")
-        plt.ylabel("Tempo medio (segundos)")
-        plt.grid(True)
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, f"tempo_{scenario}.png"))
-        plt.close()
+    print(f"CSVs para graficos em planilha salvos em: {output_dir}")
 
-    print(f"Graficos salvos em: {output_dir}")
+
+def save_spreadsheet_instructions(output_dir):
+    output_path = os.path.join(output_dir, "como_gerar_graficos.txt")
+    with open(output_path, "w", encoding="utf-8") as instructions_file:
+        instructions_file.write(
+            "Como gerar os graficos em uma planilha:\n"
+            "1. Abra LibreOffice Calc, Excel ou Google Sheets.\n"
+            "2. Importe um dos arquivos tempo_*.csv desta pasta.\n"
+            "3. Selecione todas as colunas importadas.\n"
+            "4. Insira um grafico de linhas.\n"
+            "5. Use a coluna tamanho como eixo X e uma linha para cada algoritmo.\n"
+        )
+
+
+def generate_spreadsheet_chart_files(rows, output_dir):
+    save_spreadsheet_chart_csvs(rows, output_dir)
+    save_spreadsheet_instructions(output_dir)
 
 
 def parse_sizes(text):
@@ -191,9 +199,9 @@ def main():
         help="Caminho do arquivo CSV de saida.",
     )
     parser.add_argument(
-        "--charts-dir",
-        default=os.path.join("resultados", "graficos"),
-        help="Pasta onde os graficos serao salvos se matplotlib estiver instalado.",
+        "--spreadsheet-dir",
+        default=os.path.join("resultados", "planilha"),
+        help="Pasta onde serao salvos os CSVs prontos para graficos em planilha.",
     )
 
     args = parser.parse_args()
@@ -202,7 +210,7 @@ def main():
     sizes = parse_sizes(args.sizes)
     rows = run_benchmark(sizes, args.repetitions, args.seed)
     save_csv(rows, args.output)
-    try_generate_charts(rows, args.charts_dir)
+    generate_spreadsheet_chart_files(rows, args.spreadsheet_dir)
 
     print(f"Resultados salvos em: {args.output}")
 

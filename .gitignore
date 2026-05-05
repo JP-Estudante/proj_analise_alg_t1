@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 resultados/graficos/
+resultados/planilha/
+resultados/resultados.csv
+resultados/resultados.csv

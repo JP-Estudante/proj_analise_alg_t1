@@ -87,3 +87,7 @@ Priorizar:
 * Mesmo conjunto de entradas para ambos os algoritmos.
 * Separar análise teórica de análise experimental.
 * Destacar diferenças entre comportamento esperado e observado.
+
+## Diretrizes de Explicação do Código
+
+* Ao citar funções, linhas ou trechos específicos do código, incluir hyperlinks diretos para o arquivo e a linha correspondente sempre que possível.
